@@ -221,9 +221,11 @@ void CreateHookThread() {
 
 int main() {
 	SetConsoleTitleA("Keylogger");
-	printf("THIS IS A KEYLOGGER DO NOT LEAVE IT OPEN!!!!\n");
-	printf("There is no possible way to hide this keylogger. Dont even try bub.\n");
-	printf("This program outputs a nice csv file called Keylogger.csv :) \n");
+	MessageBox(NULL, L"The keylogger has been started.", L"Keylogger", MB_OK);
+	printf("THIS IS A KEYLOGGER!\n");
+	printf("Your file will be saved as: 'Keylogger.csv' :) \n");
+	printf("To stop the keylogger, close this window at any time. \n");
+	printf("\n");
 	if (SetFileNames()) {
 		CreateHookThread();
 
