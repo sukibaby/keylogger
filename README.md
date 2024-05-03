@@ -21,3 +21,5 @@ The keylogger produces a CSV file with an output like this:
 1714713798329,b
 1714713798953,!
 ```
+
+You can decode the unix time style timestamp before the comma by using a website like https://www.epochconverter.com/ or https://unixtime.org/.
